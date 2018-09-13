@@ -1,10 +1,16 @@
 #本文参考http://www.ruanyifeng.com/blog/2015/02/make.html
 #参考:<跟我一起写Makefile>
 #注:make在linux中的usr/bin中
+
 #makefile的语法:
 ##target ... : prerequisites ...
 ##	command
 
+#makefile的执行方式就是make target。也可以有多个target一起执行，比如make target1 target2 ....
+
+#在make过程中如果要打印某个make变量，用echo。
+
+##测试用例0:wildcard, ifeq
 ifeq ($(wildcard .git),)   #wildcard为通配符，相当于*.git，$为引用make变量或者调用内置函数（注意不是shell指令）。ifeq表示if equal
     $(error YOU HAVE TO USE GIT TO DOWNLOAD THIS REPOSITORY. ABORTING.)
 endif
@@ -75,5 +81,5 @@ testMAKECMDGOALS:
 	@echo $(FIRST_ARG)
 hh:
 	@echo $(FIRST_ARG)
-	@echo $(ARGS)
-	@echo $(MAKE)
+	@echo ${ARGS}
+	@echo ${MAKE}  #用{}或者()表示引用都行
