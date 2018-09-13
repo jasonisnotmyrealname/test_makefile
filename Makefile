@@ -1,12 +1,15 @@
 #本文参考http://www.ruanyifeng.com/blog/2015/02/make.html
-
-#make在linux中的usr/bin中
+#参考:<跟我一起写Makefile>
+#注:make在linux中的usr/bin中
+#makefile的语法:
+##target ... : prerequisites ...
+##	command
 
 ifeq ($(wildcard .git),)   #wildcard为通配符，相当于*.git，$为引用make变量或者调用内置函数（注意不是shell指令）。ifeq表示if equal
     $(error YOU HAVE TO USE GIT TO DOWNLOAD THIS REPOSITORY. ABORTING.)
 endif
 
-##测试用例1
+##测试用例1:PHONY
 .PHONY:b  #这是一个label(伪目标)
 b:
 	touch b
@@ -15,14 +18,8 @@ a: b #这是第一个target，如果make指令后面什么都没有，则make生
 	touch $@   #touch:新建一个文件,这里的‘$@’指target
 	echo "hahaha" > $@ 
 
-##测试用例2
-srcfiles := $(wildcard *.txt)   #查找所有的.txt文件，注意bash中的通配符*在变量赋值时无法展开(比如srcfiles = *.txt，得到的srcfiles就是'*.txt'，而不是所有的txt文件名。这时候需要用wildcard指令展开*.txt)，
-all: 
-	@echo "Nothing happened,because there is no prerequisites"  
-	@echo "Write something to a text file"  > source.txt
-	@echo ${srcfiles}  #打印所有的后缀名为txt的文件
 
-##测试用例3
+##测试用例2: @、echo
 var = hello
 test: 
 	#这是测试，本条注释也会被输出
@@ -32,7 +29,15 @@ test:
 	@echo $$HOME
 
 
-##测试用例4
+##测试用例3:wildcard
+srcfiles := $(wildcard *.txt)   #查找所有的.txt文件，注意bash中的通配符*在变量赋值时无法展开(比如srcfiles = *.txt，得到的srcfiles就是'*.txt'，而不是所有的txt文件名。这时候需要用wildcard指令展开*.txt)，
+all: 
+	@echo "Nothing happened,because there is no prerequisites"  
+	@echo "Write something to a text file"  > source.txt
+	@echo ${srcfiles}  #打印所有的后缀名为txt的文件
+
+
+##测试用例4: call、eval
 FIRST_ARG := $(firstword $(MAKECMDGOALS))
 define cmake-build   #定义一个命令包
 @set PX4_CONFIG = hello  #这是一个shell指令
@@ -49,4 +54,26 @@ $(ALL_CONFIG_TARGETS):
 test_firstword:
 	@echo ${FIRST_ARG}
 	$(call cmake-build, hi)  #hi作为第一个参数传递给cmake-build
-	
+
+#测试用例5:MAKEFILE_LIST
+#参考https://ftp.gnu.org/old-gnu/Manuals/make/html_node/make_17.html
+include ./tt/inc.mk  #包含一个新的makefile,那么这个makefile的名称将被append到MAKEFILE_LIST的末端
+SRC_DIR := $(MAKEFILE_LIST)  #当前的所有的makefile名称
+SRC_DIR := $(lastword $(MAKEFILE_LIST))  #最后一个makefile的名称
+SRC_DIR := $(realpath $(lastword $(MAKEFILE_LIST)))  #最后一个makefile的路径(含makefile名称)
+SRC_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))  #最后一个makefile的路径(不含makefile名称)
+.PHONY: testMAKEFILELIST
+testMAKEFILELIST:
+	@echo $(MAKEFILE_LIST)
+	@echo $(SRC_DIR)
+
+#测试用例6:MAKECMDGOALS
+FIRST_ARG := $(firstword $(MAKECMDGOALS))   #测试:make testMAKECMDGOALS hh
+ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+.PHONY: testMAKECMDGOALS hh
+testMAKECMDGOALS:
+	@echo $(FIRST_ARG)
+hh:
+	@echo $(FIRST_ARG)
+	@echo $(ARGS)
+	@echo $(MAKE)
